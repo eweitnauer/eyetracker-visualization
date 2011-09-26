@@ -1,0 +1,51 @@
+body {
+  background: white;
+  color: #444;
+  font-family: sans-serif;
+}
+
+canvas#canvas {
+  width: 1100px;
+  height: 530px;
+}
+
+div#trials, #tl_div {
+  width: 1100px;
+}
+
+#tl_label {
+  display: inline-block;
+  width: 5em;
+}
+
+#timeline {
+  width: 1100px;
+}
+
+#saccades_div {
+  width: 1100px;
+  padding-left: 7px;
+  padding-right: 3px;
+}
+
+canvas#saccades {
+  width: 1090px;
+  height: 20px;
+}
+
+.button {
+  text-align: center;
+  border: 2px solid #66E;
+  border-radius: 7px;
+  color: black;
+  background: #CCF;
+  display: inline-block;
+  text-decoration: none;
+  padding: 2px 4px;
+  margin: 6px;
+}
+
+.button.active {
+  border: 2px solid #FFB351;
+  background: #FFDFB9;
+}

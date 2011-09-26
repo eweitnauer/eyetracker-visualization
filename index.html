@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>EyeTracking Visualizer</title>
+    <script type="text/javascript" src="parse.js"></script>
+    <script type="text/javascript" src="analyse.js"></script>
+    <script type="text/javascript" src="main.js"></script>
+    <link href="main.css" rel="stylesheet" type="text/css">
+  </head>
+  <body onload="init();">
+    <div id="files"><span>Files:</span></br></div>
+    <div id="trials"><span>Trials:</span></br></div>
+    <canvas id="canvas"></canvas></br>
+    <div id="tl_div">
+      <input id="timeline" name="timeline" type="range" min="0" max="0" value="0" />
+      <span id="tl_label"></span>
+      <a href='/' class='button' id="play_btn" onclick="event.preventDefault();play(event);">Play</a>
+      <span id="eye_label">Main Eye: </span>
+      <a href="/" class="button active" id="left_btn" onclick="event.preventDefault();setEye('L');">L</a>
+      <a href="/" class="button" id="right_btn" onclick="event.preventDefault();setEye('R');">R</a>      
+    </div>
+    <div id="results">
+      <span id='res1'></span><br/>
+      <p>Saccades (in one scene / between scene on one side / between sides): <span id='sacc_numbers'></span></p>
+      <div id='saccades_div'> 
+        <canvas id='saccades' width='1090px' height='20px'></canvas><br/>
+        <canvas id='saccades2' width='1090px' height='20px'></canvas><br/>
+        <canvas id='pupils' width='1090px' height='20px'></canvas><br/>        
+      </div>
+    </div>
+  </body>
+</html>
