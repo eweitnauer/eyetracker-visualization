@@ -9,6 +9,8 @@ var file_list = {
           'pbp08', 'pbp09', 'pbp10', 'pbp11', 'pbp_me']
 };
 
+var trials_cache = {};
+
 var solved = [[1,0,0,1,1,1,1,1,1,0,1,1,1,1,1,0,0,0,1,1,0,1,1,0,1,1,1,0,1,1,1,0,1],
               [1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,0,0,0],
               [1,0,0,1,1,1,0,1,1,0,0,1,1,1,1,0,1,0,1,1,0,1,1,1,0,1,1,0,1,1,1,0,0],
@@ -38,8 +40,26 @@ function init() {
   timeline = $('timeline');
   timeline.addEventListener("change", function(evt) {setTrialTime(event.target.valueAsNumber)}, false);    
   
+  registerKeyboardListener();
+  
   // load the first file
   loadFile(0);
+}
+
+function registerKeyboardListener() {
+  document.addEventListener('keydown', function(evt) {
+    if (evt.keyCode == 37) { // left arrow
+      if (curr_trial>0) showTrial(curr_trial-1);
+    } else if (evt.keyCode == 39) { // right arrow
+      if (curr_trial<trials.length-1) showTrial(curr_trial+1);
+    } else if (evt.keyCode == 38) { // up arrow
+      if (curr_file>0) loadFile(curr_file-1);
+    } else if (evt.keyCode == 40) { // down arrow
+      if (curr_file<file_list.files.length-1) loadFile(curr_file+1);
+    } else if (evt.keyCode == 32) { // space
+      play(evt);
+    }
+  });
 }
 
 function play(event) {
@@ -74,9 +94,11 @@ function loadFile(idx) {
   curr_file = idx;
   // parse eyetracking file
   var filename = file_list.prefix + file_list.files[idx] + file_list.postfix;
+  if (!trials_cache[filename]) {
   console.log('parsing ' + filename + '...');
-  trials = parse_file(filename, -(1920-1100)*0.5, -(1200-530)*0.5);
-  console.log('Loaded ' + trials.length + ' trials.');
+  trials_cache[filename] = parse_file(filename, -(1920-1100)*0.5, -(1200-530)*0.5);
+  }
+  trials = trials_cache[filename];
   setCurrentButton(idx, $('files').childNodes);
   // add trial buttons
   addButtons($('trials'), trials, true, showTrial);
@@ -105,10 +127,14 @@ function analyse_trial() {
   $('res1').innerHTML = solved[curr_file][curr_trial] ? 'solved' : 'NOT solved';
   var sacc = count_saccade_types(trials[curr_trial], main_eye);
   $('sacc_numbers').innerHTML = sacc.one_scene + " / " + sacc.two_scenes_one_side + " / " + sacc.two_sides;
-  if (trials[curr_trial].data_valid) { 
-    drawSaccadeTimeline(trials[curr_trial].data_valid[main_eye]);
-    drawSaccadeTimeline2(trials[curr_trial].data_valid[main_eye]);
-    drawPupilTimeline(trials[curr_trial].data_valid[main_eye]);
+  if (trials[curr_trial].data_valid) {
+    var valid_data = trials[curr_trial].data_valid[main_eye];
+    drawSaccadeTimeline(valid_data);
+    drawPupilTimeline(valid_data);
+    var fix_lr = getFixationTimePerSide(valid_data);//(fix_lr[0]+fix_lr[1])
+    $('fix_lr').innerHTML = (100*fix_lr[0]/trials[curr_trial].duration).toFixed(1) + ' % / ' +
+                            (100*fix_lr[1]/trials[curr_trial].duration).toFixed(1) + ' %';
+    $('fix_per_sec').innerHTML = (getFixationCount(valid_data) / trials[curr_trial].duration * 1000).toFixed(2);
   }
 }
 
@@ -134,48 +160,6 @@ function drawPupilTimeline(d) {
 
 function drawSaccadeTimeline(d) {
   // paint saccade types on timeline
-  var ctx = $('saccades2').getContext('2d');
-  ctx.clearRect(0,0,1090,20);
-  ctx.strokeStyle = 'black';
-  ctx.lineWidth = 0.5;
-  ctx.beginPath();
-  ctx.moveTo(0,0);
-  ctx.lineTo(0,20);
-  ctx.moveTo(0,10);
-  ctx.lineTo(1090,10);
-  ctx.moveTo(1090,0);
-  ctx.lineTo(1090,20);
-  ctx.stroke();
-  var t0 = 0;
-  var side = 'l';
-  for (var i=0; i<d.length; i++) {
-    if (d[i].type != 'sacc') continue;
-    var x = 1090 * (d[i].t0+d[i].t1)/2 / trials[curr_trial].duration;
-    var type = getSaccadeType(d[i]);
-    if (type == 'one_scene') {
-      ctx.fillStyle = 'gray';
-      ctx.fillRect(x-1,5,2,10);
-    } else if (type == 'two_scenes_one_side') {
-      ctx.fillStyle = 'black';
-      ctx.fillRect(x-1,2,2,16);
-    } else if (type == 'two_sides') {
-      side = getProblemSide(d[i].x0,d[i].y0);
-      if (side == 'l') ctx.fillStyle = 'rgba(255,0,0,0.3)';
-      else if (side == 'r') ctx.fillStyle = 'rgba(0,0,255,0.3)';
-      else ctx.fillStyle = 'gray';
-      var x0 = 1090 * t0 / trials[curr_trial].duration;
-      t0 = (d[i].t0+d[i].t1)/2;
-      ctx.fillRect(x0,0,x-x0,20);
-    }
-  }
-  if (side == 'l') ctx.fillStyle = 'rgba(0,0,255,0.3)';
-  else if (side == 'r') ctx.fillStyle = 'rgba(255,0,0,0.3)';
-  var x0 = 1090 * t0 / trials[curr_trial].duration;
-  ctx.fillRect(x0,0,1090-x0,20);        
-}
-
-function drawSaccadeTimeline(d) {
-  // paint saccade types on timeline
   var ctx = $('saccades').getContext('2d');
   ctx.clearRect(0,0,1090,20);
   ctx.strokeStyle = 'black';
@@ -188,16 +172,44 @@ function drawSaccadeTimeline(d) {
   ctx.moveTo(1090,0);
   ctx.lineTo(1090,20);
   ctx.stroke();
+  if (d.length<1) return;
+  // first paint colored bars depending on to which side the person looks
+  var curr_side = 'l';
+  var t0 = 0;
+  for (var i=0; i<d.length; i++) {
+    if (d[i].type == 'fix') {
+      var side = getProblemSide(d[i].x, d[i].y);
+      var t1 = d[i].t0;
+    } else if (d[i].type == 'sacc') {
+      var side = getProblemSide(d[i].x0, d[i].y0);
+      var t1 = (d[i].t1+d[i].t0)/2;
+    }
+    if (side != null && side != curr_side) {
+      if (curr_side == 'l') ctx.fillStyle = 'rgba(255,0,0,0.3)';
+      else ctx.fillStyle = 'rgba(0,0,255,0.3)';
+      var x0 = 1090 * t0 / trials[curr_trial].duration;
+      var x1 = 1090 * t1 / trials[curr_trial].duration;
+      ctx.fillRect(x0,3,x1-x0,14);
+      t0 = t1;
+      curr_side = side;
+    }
+  }
+  if (side == 'r') ctx.fillStyle = 'rgba(0,0,255,0.3)';
+  else if (side == 'l') ctx.fillStyle = 'rgba(255,0,0,0.3)';
+  var x0 = 1090 * t0 / trials[curr_trial].duration;
+  ctx.fillRect(x0,3,1090-x0,14);
+
   for (var i=0; i<d.length; i++) {
     if (d[i].type != 'sacc') continue;
-    var t = getSaccadeType(d[i]);
-    if (t == null) continue;
-    else if (t == 'one_scene') ctx.fillStyle = 'gray';
-    else if (t == 'two_scenes_one_side') ctx.fillStyle = 'orange';
-    else if (t == 'two_sides') ctx.fillStyle = 'red';
-    var x = 1090 * ((d[i].t0+d[i].t1)/2) / trials[curr_trial].duration;
-    ctx.fillRect(x-2, 0, 4, 20);
-    ctx.strokeRect(x-2, 0, 4, 20);
+    var x = 1090 * (d[i].t0+d[i].t1)/2 / trials[curr_trial].duration;
+    var type = getSaccadeType(d[i]);
+    if (type == 'one_scene') {
+      ctx.fillStyle = 'gray';
+      ctx.fillRect(x-0.5,5,1,10);
+    } else if (type == 'two_scenes_one_side') {
+      ctx.fillStyle = 'black';
+      ctx.fillRect(x-0.5,0,1,20);
+    }
   }
 }
 
@@ -233,7 +245,7 @@ function addButtons(div, values, use_idx_as_label, callback) {
     a.addEventListener("click", function(event) {
       callback(event.target.value);
       event.preventDefault();
-    });
+    }, false);
     div.appendChild(a);
   }
 }
@@ -299,7 +311,7 @@ function drawCurrent() {
   if (!curr_img) return;
   var draw = function() {
     ctx.drawImage(curr_img, 0, 0);
-    drawGazeHistory(curr_time, trials[curr_trial], main_eye, 6);
+    drawGazeHistory(curr_time, trials[curr_trial], main_eye, 600);
     //drawGazeHistory(curr_time, trials[curr_trial], other_eye, 10);
     //drawGaze(trials[curr_trial].getEvent(curr_time, 'L'), 0.7);
     //drawGaze(trials[curr_trial].getEvent(curr_time, 'R'), 0.7);
@@ -307,5 +319,5 @@ function drawCurrent() {
     highlightScene(trials[curr_trial].getEvent(curr_time, main_eye));
   }
   if (curr_img.complete) draw();
-  else curr_img.addEventListener("load", draw);
+  else curr_img.addEventListener("load", draw, false);
 }

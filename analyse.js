@@ -35,6 +35,27 @@ function count_saccade_types(trial, eye) {
   return saccades;
 }
 
+function getFixationCount(data) {
+  var count = 0;
+  for (var i=0; i<data.length; ++i) {
+    if (data[i].type == 'fix') count++;
+  }
+  return count;
+}
+
+/// Returns an array [tl, tr] where tl is the total fixation time on scenes on the
+/// left side. tr is for right side.
+function getFixationTimePerSide(data) {
+  var tl=0, tr=0;
+  for (var i=0; i<data.length; ++i) {
+    if (data[i].type != 'fix') continue;
+    var s = getProblemSide(data[i].x, data[i].y);
+    if (s == 'l') tl += data[i].duration;
+    else if (s == 'r') tr += data[i].duration;
+  }
+  return [tl,tr];
+}
+
 function analyse(trial, eye) {
   console.log('Duration: ' + trial.duration / 1000 + ' sec');
   console.log('Fixation time per scene: ' + JSON.stringify(fixation_time_per_scene(trial, eye)));

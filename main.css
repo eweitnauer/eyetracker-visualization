@@ -4,6 +4,10 @@ body {
   font-family: sans-serif;
 }
 
+p {
+  margin: 4px 0;
+}
+
 canvas#canvas {
   width: 1100px;
   height: 530px;
