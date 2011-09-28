@@ -1,0 +1,25 @@
+Web-Visualizer for Eyetracking Data
+===================================
+2011 by Erik Weitnauer
+
+Prerequisites
+-------------
+* node.js (v0.4.2) installed
+* .asc eyetracking data files only containing events in the ./DATA directory
+  (use edf2asc.exe with the -e option for converting the .edf files from the
+   tracker)
+* image files in the ./IMAGES directory
+
+How to use
+----------
+1. Visualization
+Start a static file server on the local machine by calling
+  >node node_static_server.js
+in your shell. Then browse to the address http://localhost:8888/ in a modern
+web browser.
+
+2. Data Extraction
+The scripts node_write_fix_times.js, node_write_left_fraction.js and
+node_write_times.js can be run with node to extract the respective data from
+the .asc files and write them into csv-files. In these files, each column
+represents a person and each row a problem.

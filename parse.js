@@ -78,11 +78,12 @@ function parse_file(file_name, dx, dy) {
     file = ajaxGetUrl(file_name).split("\n");
   }
 
-  var trials = [], trial, t_t0;
+  var trials = [], trial, t_t0, display_on=false;
   for (var line=0; line < file.length; ++line) {
     // MSG START_TRIAL
     file[line].replace(/MSG\s+(\d+)\s+START_TRIAL\s+(\d+)/, function(m, time, number) {
       trial = new Trial();
+      display_on = false;
     });
 
     // MSG IMG_LOAD
@@ -93,7 +94,10 @@ function parse_file(file_name, dx, dy) {
     // MSG DISPLAY_ON
     file[line].replace(/MSG\s+(\d+)\s+\d\s+DISPLAY_ON/, function(m, time) {
       t_t0 = parseInt(time);
+      display_on = true;
     });
+    
+    if (!display_on) continue;
     
     // MSG ENDBUTTON
     file[line].replace(/MSG\s+(\d+)\s+ENDBUTTON/, function(m, time) {

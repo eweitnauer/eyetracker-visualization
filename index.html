@@ -17,8 +17,8 @@
       <span id="tl_label"></span>
       <a href='/' class='button' id="play_btn" onclick="event.preventDefault();play(event);">Play</a>
       <span id="eye_label">Main Eye: </span>
-      <a href="/" class="button active" id="left_btn" onclick="event.preventDefault();setEye('L');">L</a>
-      <a href="/" class="button" id="right_btn" onclick="event.preventDefault();setEye('R');">R</a>      
+      <a href="/" class="button active" id="left_btn" onclick="event.preventDefault();setEye('L', true);">L</a>
+      <a href="/" class="button" id="right_btn" onclick="event.preventDefault();setEye('R', true);">R</a>      
     </div>
     <div id="results">
       <span id='res1'></span><br/>
@@ -28,7 +28,7 @@
         <canvas id='pupils' width='1090px' height='20px'></canvas><br/>        
       </div>
       <p>Fixations left / right: <span id='fix_lr'></span></p>
-      <p>Fixations per second: <span id='fix_per_sec'></span></p>
+      <p>Avg. fixation length: <span id='fix_length'></span></p>
     </div>
   </body>
 </html>

@@ -50,14 +50,19 @@ function registerKeyboardListener() {
   document.addEventListener('keydown', function(evt) {
     if (evt.keyCode == 37) { // left arrow
       if (curr_trial>0) showTrial(curr_trial-1);
+      evt.preventDefault();
     } else if (evt.keyCode == 39) { // right arrow
       if (curr_trial<trials.length-1) showTrial(curr_trial+1);
+      evt.preventDefault();
     } else if (evt.keyCode == 38) { // up arrow
       if (curr_file>0) loadFile(curr_file-1);
+      evt.preventDefault();
     } else if (evt.keyCode == 40) { // down arrow
       if (curr_file<file_list.files.length-1) loadFile(curr_file+1);
+      evt.preventDefault();
     } else if (evt.keyCode == 32) { // space
-      play(evt);
+      play();
+      evt.preventDefault();
     }
   });
 }
@@ -68,7 +73,7 @@ function play(event) {
     if (curr_time >= trials[curr_trial].duration-1) setTrialTime(0);
     last_time = Date.now();
     timer_id = setInterval(stepTime, 1000/30);
-    event.target.innerHTML = 'Pause';
+    $('play_btn').innerHTML = 'Pause';
   }
 }
 
@@ -110,6 +115,7 @@ function loadFile(idx) {
 function showTrial(idx) {
   setCurrentButton(idx, $('trials').childNodes);
   curr_trial = idx;
+  chooseBetterTrial();
   analyse_trial();
   // load the image
   curr_img = new Image();
@@ -119,8 +125,16 @@ function showTrial(idx) {
   timeline.max = trials[idx].duration;
   timeline.value = 0;
   timeline.step = 2;
-  setTrialTime(0);
+  if (!curr_time) setTrialTime(0);
+  else setTrialTime(Math.min(curr_time, trials[curr_trial].duration));
 }
+
+function chooseBetterTrial() {
+  var l_good = getValidFixationFraction(trials[curr_trial].data.L),
+      r_good = getValidFixationFraction(trials[curr_trial].data.R);
+  if (!r_good || (l_good >= r_good)) setEye('L', false);
+  else setEye('R', false);
+}      
 
 function analyse_trial() {
   g_info = fixation_time_per_scene(trials[curr_trial], main_eye);
@@ -129,12 +143,15 @@ function analyse_trial() {
   $('sacc_numbers').innerHTML = sacc.one_scene + " / " + sacc.two_scenes_one_side + " / " + sacc.two_sides;
   if (trials[curr_trial].data_valid) {
     var valid_data = trials[curr_trial].data_valid[main_eye];
+    var data = trials[curr_trial].data[main_eye];
     drawSaccadeTimeline(valid_data);
-    drawPupilTimeline(valid_data);
-    var fix_lr = getFixationTimePerSide(valid_data);//(fix_lr[0]+fix_lr[1])
-    $('fix_lr').innerHTML = (100*fix_lr[0]/trials[curr_trial].duration).toFixed(1) + ' % / ' +
-                            (100*fix_lr[1]/trials[curr_trial].duration).toFixed(1) + ' %';
-    $('fix_per_sec').innerHTML = (getFixationCount(valid_data) / trials[curr_trial].duration * 1000).toFixed(2);
+    drawPupilTimeline(data);
+    var fix_lr = getFixationTimePerSide(data);//(fix_lr[0]+fix_lr[1])
+    var total = fix_lr[0] + fix_lr[1] + fix_lr[2];
+    $('fix_lr').innerHTML = (100*fix_lr[0]/total).toFixed(1) + ' % / ' +
+                            (100*fix_lr[1]/total).toFixed(1) + ' % / ' +
+                            (100*fix_lr[2]/total).toFixed(1) + ' %';
+    $('fix_length').innerHTML = (getAverageFixationTime(data)).toFixed(0) + ' ms';
   }
 }
 
@@ -213,7 +230,7 @@ function drawSaccadeTimeline(d) {
   }
 }
 
-function setEye(eye) {
+function setEye(eye, refresh) {
   if (eye == 'L') {
     main_eye = 'L'; other_eye = 'R';
     $('left_btn').className = 'button active';
@@ -224,8 +241,10 @@ function setEye(eye) {
     $('left_btn').className = 'button';
     $('right_btn').className = 'button active';
   }
-  analyse_trial();
-  drawCurrent();
+  if (refresh) {
+    analyse_trial();
+    drawCurrent();
+  }
 }
 
 function setCurrentButton(idx, btns) {

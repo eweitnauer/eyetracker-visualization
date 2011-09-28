@@ -35,25 +35,35 @@ function count_saccade_types(trial, eye) {
   return saccades;
 }
 
-function getFixationCount(data) {
-  var count = 0;
+function getAverageFixationTime(data) {
+  var time = 0, count = 0;
   for (var i=0; i<data.length; ++i) {
-    if (data[i].type == 'fix') count++;
+    if (data[i].type == 'fix') {
+      count++;
+      time += data[i].duration;
+    }
   }
-  return count;
+  return time/count;
 }
 
-/// Returns an array [tl, tr] where tl is the total fixation time on scenes on the
-/// left side. tr is for right side.
+/// Returns an array [tl, tr, tx] where tl is the total fixation time on scenes on the
+/// left side. tr is for right side, tx the time when a point is fixated that does not
+/// belong to any scene.
 function getFixationTimePerSide(data) {
-  var tl=0, tr=0;
+  var tl=0, tr=0, tx=0;
   for (var i=0; i<data.length; ++i) {
     if (data[i].type != 'fix') continue;
     var s = getProblemSide(data[i].x, data[i].y);
     if (s == 'l') tl += data[i].duration;
     else if (s == 'r') tr += data[i].duration;
+    else tx += data[i].duration;
   }
-  return [tl,tr];
+  return [tl,tr,tx];
+}
+
+function getValidFixationFraction(data) {
+  var times = getFixationTimePerSide(data);
+  return (times[0]+times[1]) / (times[0]+times[1]+times[2]);
 }
 
 function analyse(trial, eye) {
@@ -103,4 +113,9 @@ function getProblemSide(x,y) {
   return 'r';
 }
 
-if (typeof(exports) != 'undefined') exports.getSceneIndex = getSceneIndex;
+if (typeof(exports) != 'undefined') {
+  exports.getSceneIndex = getSceneIndex;
+  exports.getAverageFixationTime = getAverageFixationTime;
+  exports.getValidFixationFraction = getValidFixationFraction;
+  exports.getFixationTimePerSide = getFixationTimePerSide;
+}
